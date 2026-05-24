@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EarnHub Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:'Inter',sans-serif;
+    }
+
+    body{
+      background:#0f172a;
+      color:white;
+      display:flex;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      width:260px;
+      background:#111827;
+      padding:25px;
+      border-right:1px solid rgba(255,255,255,0.05);
+    }
+
+    .logo{
+      font-size:28px;
+      font-weight:700;
+      color:#38bdf8;
+      margin-bottom:40px;
+    }
+
+    .menu button{
+      width:100%;
+      margin-bottom:15px;
+      padding:14px;
+      border:none;
+      border-radius:12px;
+      background:#1e293b;
+      color:white;
+      font-size:15px;
+      cursor:pointer;
+      transition:0.3s;
+      text-align:left;
+    }
+
+    .menu button:hover{
+      background:#38bdf8;
+      color:black;
+    }
+
+    .main{
+      flex:1;
+      padding:30px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:30px;
+    }
+
+    .topbar h1{
+      font-size:30px;
+    }
+
+    .wallet-card{
+      background:linear-gradient(135deg,#0284c7,#0ea5e9);
+      padding:30px;
+      border-radius:24px;
+      margin-bottom:30px;
+    }
+
+    .wallet-card h2{
+      font-size:15px;
+      margin-bottom:10px;
+    }
+
+    .wallet-balance{
+      font-size:42px;
+      font-weight:700;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:20px;
+    }
+
+    .card{
+      background:#111827;
+      border-radius:22px;
+      padding:24px;
+      margin-bottom:20px;
+    }
+
+    .card h3{
+      margin-bottom:20px;
+    }
+
+    .task{
+      background:#1e293b;
+      padding:18px;
+      border-radius:16px;
+      margin-bottom:15px;
+    }
+
+    .task h4{
+      margin-bottom:8px;
+    }
+
+    .task p{
+      margin-bottom:12px;
+      color:#cbd5e1;
+    }
+
+    input{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:12px;
+      margin-bottom:12px;
+      background:#0f172a;
+      color:white;
+    }
+
+    .btn{
+      width:100%;
+      padding:14px;
+      border:none;
+      border-radius:12px;
+      background:#38bdf8;
+      color:black;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .section{
+      display:none;
+    }
+
+    .active{
+      display:block;
+    }
+
+    @media(max-width:900px){
+
+      body{
+        flex-direction:column;
+      }
+
+      .sidebar{
+        width:100%;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+  <div class="logo">
+    EarnHub
+  </div>
+
+  <div class="menu">
+
+    <button onclick="showSection('dashboard')">
+      Dashboard
+    </button>
+
+    <button onclick="showSection('tasks')">
+      Tasks
+    </button>
+
+    <button onclick="showSection('withdraw')">
+      Withdraw
+    </button>
+
+    <button onclick="logout()">
+      Logout
+    </button>
+
+  </div>
+
+</div>
+
+<div class="main">
+
+  <div class="topbar">
+
+    <h1>User Dashboard</h1>
+
+  </div>
+
+  <div id="dashboard" class="section active">
+
+    <div class="wallet-card">
+
+      <h2>Total Balance</h2>
+
+      <div class="wallet-balance" id="balance">
+        KSH 0
+      </div>
+
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+
+        <h3>Quick Stats</h3>
+
+        <p>Total Earnings</p>
+
+        <br>
+
+        <h2 id="earnings">KSH 0</h2>
+
+      </div>
+
+      <div class="card">
+
+        <h3>Account</h3>
+
+        <p>Active User</p>
+
+        <br>
+
+        <h2>Verified</h2>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="tasks" class="section">
+
+    <div class="card">
+
+      <h3>Available Tasks</h3>
+
+      <div id="tasksContainer"></div>
+
+    </div>
+
+  </div>
+
+  <div id="withdraw" class="section">
+
+    <div class="card">
+
+      <h3>Withdraw Funds</h3>
+
+      <input id="phone" placeholder="Safaricom Number">
+
+      <input id="amount" placeholder="Amount">
+
+      <button class="btn" onclick="withdraw()">
+        Withdraw via M-Pesa
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const API = "http://127.0.0.1:5000/api";
+
+const userId = localStorage.getItem("userId");
+
+function showSection(id){
+
+  document.querySelectorAll('.section')
+    .forEach(section=>{
+      section.classList.remove('active');
+    });
+
+  document.getElementById(id)
+    .classList.add('active');
+
+}
+
+function logout(){
+
+  localStorage.clear();
+
+  window.location.href = 'login.html';
+
+}
+
+async function loadBalance(){
+
+  const res = await fetch(`${API}/wallet/${userId}`);
+
+  const data = await res.json();
+
+  document.getElementById('balance')
+    .innerText = `KSH ${data.balance}`;
+
+  document.getElementById('earnings')
+    .innerText = `KSH ${data.balance}`;
+
+}
+
+async function loadTasks(){
+
+  const res = await fetch(`${API}/tasks`);
+
+  const tasks = await res.json();
+
+  const container =
+    document.getElementById('tasksContainer');
+
+  container.innerHTML = '';
+
+  tasks.forEach(task=>{
+
+    container.innerHTML += `
+
+      <div class="task">
+
+        <h4>${task.title}</h4>
+
+        <p>${task.description}</p>
+
+        <p><b>Reward:</b> KSH ${task.reward}</p>
+
+        <input
+          id="proof-${task.id}"
+          placeholder="Proof link"
+        >
+
+        <button
+          class="btn"
+          onclick="submitTask('${task.id}')"
+        >
+          Submit Task
+        </button>
+
+      </div>
+
+    `;
+
+  });
+
+}
+
+async function submitTask(taskId){
+
+  const proof =
+    document.getElementById(
+      `proof-${taskId}`
+    ).value;
+
+  const res = await fetch(
+    `${API}/tasks/submit`,
+    {
+      method:'POST',
+
+      headers:{
+        'Content-Type':'application/json'
+      },
+
+      body:JSON.stringify({
+        user_id:userId,
+        task_id:taskId,
+        proof
+      })
+    }
+  );
+
+  const data = await res.json();
+
+  alert(data.message);
+
+}
+
+async function withdraw(){
+
+  const phone =
+    document.getElementById('phone').value;
+
+  const amount =
+    document.getElementById('amount').value;
+
+  const res = await fetch(
+    `${API}/wallet/withdraw`,
+    {
+      method:'POST',
+
+      headers:{
+        'Content-Type':'application/json'
+      },
+
+      body:JSON.stringify({
+        user_id:userId,
+        phone,
+        amount
+      })
+    }
+  );
+
+  const data = await res.json();
+
+  alert(data.message);
+
+}
+
+loadBalance();
+loadTasks();
+
+function showSection(id){
+  document.querySelectorAll(".section")
+    .forEach(s => s.classList.remove("active"));
+
+  document.getElementById(id).classList.add("active");
+}
+</script>
+
+</body>
+</html>

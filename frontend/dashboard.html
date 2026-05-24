@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+
+<h2>Dashboard</h2>
+
+<p id="user"></p>
+<p id="balance">Loading balance...</p>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+const API = "http://localhost:5000/api";
+
+const user = JSON.parse(localStorage.getItem("user"));
+const token = localStorage.getItem("token");
+
+if (!token) window.location.href = "index.html";
+
+document.getElementById("user").innerText = "Welcome " + user.email;
+
+async function loadBalance() {
+  const res = await fetch(`${API}/wallet/balance`, {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  });
+
+  const data = await res.json();
+
+  document.getElementById("balance").innerText =
+    "Balance: KES " + (data.balance || 0);
+}
+
+loadBalance();
+
+function logout() {
+  localStorage.clear();
+  window.location.href = "index.html";
+}
+</script>
+
+</body>
+</html>
