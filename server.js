@@ -22,8 +22,16 @@ const supabase = createClient(
 const path = require("path");
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+  res.json({
+    status: "LIVE 🚀",
+    message: "Fintech backend is running successfully",
+    routes: [
+      "/api/auth/register",
+      "/api/auth/login",
+      "/api/tasks",
+      "/api/admin/users"
+    ]
+  });
 
 // ================= AUTH =================
 
