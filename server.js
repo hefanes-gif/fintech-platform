@@ -9,6 +9,8 @@ const { createClient } = require("@supabase/supabase-js");
 dotenv.config();
 
 const app = express();
+
+// ================= MIDDLEWARE =================
 app.use(cors());
 app.use(express.json());
 
@@ -19,19 +21,19 @@ const supabase = createClient(
 );
 
 // ================= HEALTH CHECK =================
-const path = require("path");
-
 app.get("/", (req, res) => {
   res.json({
     status: "LIVE 🚀",
-    message: "Fintech backend is running successfully",
-    routes: [
-      "/api/auth/register",
-      "/api/auth/login",
-      "/api/tasks",
-      "/api/admin/users"
-    ]
+    message: "Fintech backend running successfully",
+    version: "1.0.0",
+    endpoints: {
+      register: "/api/auth/register",
+      login: "/api/auth/login",
+      tasks: "/api/tasks",
+      adminUsers: "/api/admin/users"
+    }
   });
+});
 
 // ================= AUTH =================
 
@@ -53,7 +55,7 @@ app.post("/api/auth/register", async (req, res) => {
       }
     ]);
 
-    if (error) return res.status(400).json(error);
+    if (error) return res.status(400).json({ error: error.message });
 
     res.json({ success: true, data });
   } catch (err) {
@@ -88,7 +90,10 @@ app.post("/api/auth/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ token, user: data });
+    res.json({
+      token,
+      user: data
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -97,12 +102,13 @@ app.post("/api/auth/login", async (req, res) => {
 // ================= TASKS =================
 app.get("/api/tasks", async (req, res) => {
   const { data, error } = await supabase.from("tasks").select("*");
-  if (error) return res.status(500).json(error);
+
+  if (error) return res.status(500).json({ error: error.message });
 
   res.json(data);
 });
 
-// CREATE TASK
+// CREATE TASK (ADMIN USE)
 app.post("/api/tasks", async (req, res) => {
   const { title, reward } = req.body;
 
@@ -110,16 +116,16 @@ app.post("/api/tasks", async (req, res) => {
     { title, reward }
   ]);
 
-  if (error) return res.status(500).json(error);
+  if (error) return res.status(500).json({ error: error.message });
 
-  res.json(data);
+  res.json({ success: true, data });
 });
 
 // ================= ADMIN =================
 app.get("/api/admin/users", async (req, res) => {
   const { data, error } = await supabase.from("users").select("*");
 
-  if (error) return res.status(500).json(error);
+  if (error) return res.status(500).json({ error: error.message });
 
   res.json(data);
 });
