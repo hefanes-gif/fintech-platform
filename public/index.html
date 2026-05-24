@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Fintech App</title>
+<style>
+body{font-family:Arial;background:#0f172a;color:white;margin:0}
+.sidebar{width:220px;position:fixed;height:100%;background:#111827;padding:20px}
+.main{margin-left:240px;padding:20px}
+.card{background:#1e293b;padding:15px;margin:10px;border-radius:10px}
+input,button{width:100%;padding:10px;margin:5px 0}
+button{background:#22c55e;border:none;color:white}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+<h3>FINTECH</h3>
+<button onclick="show('dash')">Dashboard</button>
+<button onclick="show('deposit')">Deposit</button>
+<button onclick="show('withdraw')">Withdraw</button>
+<button onclick="show('history')">History</button>
+</div>
+
+<div class="main">
+
+<div id="dash">
+  <div class="card">
+    <h2>Balance: <span id="bal">0</span></h2>
+  </div>
+</div>
+
+<div id="deposit" style="display:none">
+  <div class="card">
+    <input id="dphone" placeholder="Phone">
+    <input id="damount" placeholder="Amount">
+    <button onclick="deposit()">Deposit</button>
+  </div>
+</div>
+
+<div id="withdraw" style="display:none">
+  <div class="card">
+    <input id="wphone" placeholder="Phone">
+    <input id="wamount" placeholder="Amount">
+    <button onclick="withdraw()">Withdraw</button>
+  </div>
+</div>
+
+<div id="history" style="display:none">
+  <div class="card">
+    <div id="tx"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let token = localStorage.getItem("token");
+
+function auth(){
+  return { "Authorization":"Bearer "+token, "Content-Type":"application/json" };
+}
+
+function show(id){
+  document.querySelectorAll('.main > div').forEach(d=>d.style.display='none');
+  document.getElementById(id).style.display='block';
+}
+
+async function deposit(){
+  await fetch("/api/mpesa/stkpush",{
+    method:"POST",
+    headers:auth(),
+    body:JSON.stringify({
+      phone:dphone.value,
+      amount:damount.value
+    })
+  });
+  alert("STK sent");
+}
+
+async function withdraw(){
+  await fetch("/api/wallet/withdraw",{
+    method:"POST",
+    headers:auth(),
+    body:JSON.stringify({
+      phone:wphone.value,
+      amount:wamount.value
+    })
+  });
+  alert("Requested");
+}
+
+async function load(){
+  const b = await fetch("/api/wallet",{headers:auth()}).then(r=>r.json());
+  bal.innerText=b.balance;
+
+  const t = await fetch("/api/transactions",{headers:auth()}).then(r=>r.json());
+  tx.innerHTML = t.map(x=>`<div>${x.amount} - ${x.type}</div>`).join("");
+}
+
+load();
+</script>
+
+</body>
+</html>
