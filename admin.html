@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Dashboard</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Inter',sans-serif;
+}
+
+body{
+  background:#0f172a;
+  color:white;
+  display:flex;
+  min-height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:260px;
+  background:#111827;
+  padding:25px;
+}
+
+.logo{
+  font-size:28px;
+  font-weight:700;
+  color:#38bdf8;
+  margin-bottom:40px;
+}
+
+.sidebar button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#1e293b;
+  color:white;
+  margin-bottom:14px;
+  cursor:pointer;
+}
+
+.sidebar button:hover{
+  background:#38bdf8;
+  color:black;
+}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:30px;
+}
+
+/* CARD */
+.card{
+  background:#111827;
+  border-radius:20px;
+  padding:25px;
+  margin-bottom:20px;
+}
+
+.card h2{
+  margin-bottom:20px;
+}
+
+/* INPUT */
+input{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  margin-bottom:12px;
+  background:#1e293b;
+  color:white;
+}
+
+/* BUTTON */
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#38bdf8;
+  color:black;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* ITEMS */
+.item{
+  background:#1e293b;
+  padding:16px;
+  border-radius:14px;
+  margin-bottom:14px;
+}
+
+/* SECTIONS */
+.section{
+  display:none;
+}
+
+.active{
+  display:block;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+  <div class="logo">EarnHub Admin</div>
+
+  <button onclick="showSection('createTask')">
+    Create Task
+  </button>
+
+  <button onclick="showSection('submissions')">
+    Submissions
+  </button>
+
+  <button onclick="showSection('users')">
+    Users
+  </button>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- CREATE TASK -->
+<div id="createTask" class="section active">
+
+  <div class="card">
+
+    <h2>Create Task</h2>
+
+    <input id="title" placeholder="Task Title">
+    <input id="description" placeholder="Description">
+    <input id="reward" placeholder="Reward Amount">
+    <input id="link" placeholder="Task Link">
+
+    <button class="btn" onclick="createTask()">
+      Create Task
+    </button>
+
+  </div>
+
+</div>
+
+<!-- SUBMISSIONS -->
+<div id="submissions" class="section">
+
+  <div class="card">
+
+    <h2>Pending Submissions</h2>
+
+    <div id="submissionsContainer"></div>
+
+  </div>
+
+</div>
+
+<!-- USERS -->
+<div id="users" class="section">
+
+  <div class="card">
+
+    <h2>Registered Users</h2>
+
+    <div id="usersContainer"></div>
+
+  </div>
+
+</div>
+
+</div>
+
+<script>
+
+const API = "http://127.0.0.1:5000/api";
+
+/* NAVIGATION */
+function showSection(id){
+
+  document.querySelectorAll('.section')
+    .forEach(sec => sec.classList.remove('active'));
+
+  document.getElementById(id)
+    .classList.add('active');
+
+}
+
+/* CREATE TASK */
+async function createTask(){
+
+  const res = await fetch(`${API}/admin/tasks/create`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      title:title.value,
+      description:description.value,
+      reward:reward.value,
+      link:link.value
+    })
+  });
+
+  const data = await res.json();
+
+  alert(data.message);
+
+}
+
+/* LOAD SUBMISSIONS */
+async function loadSubmissions(){
+
+  const res = await fetch(`${API}/admin/submissions`);
+  const data = await res.json();
+
+  const container = document.getElementById('submissionsContainer');
+  container.innerHTML = '';
+
+  data.forEach(s => {
+
+    container.innerHTML += `
+
+      <div class="item">
+
+        <p><b>User:</b> ${s.user_id}</p>
+        <p><b>Task:</b> ${s.task_id}</p>
+        <p><b>Proof:</b> ${s.proof}</p>
+
+        <button class="btn" onclick="approve('${s.id}')">
+          Approve
+        </button>
+
+      </div>
+
+    `;
+
+  });
+
+}
+
+/* APPROVE */
+async function approve(id){
+
+  const res = await fetch(`${API}/tasks/approve`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({submission_id:id})
+  });
+
+  const data = await res.json();
+
+  alert(data.message);
+
+  loadSubmissions();
+
+}
+
+/* LOAD USERS */
+async function loadUsers(){
+
+  const res = await fetch(`${API}/admin/users`);
+  const users = await res.json();
+
+  const container = document.getElementById('usersContainer');
+  container.innerHTML = '';
+
+  users.forEach(u => {
+
+    container.innerHTML += `
+
+      <div class="item">
+
+        <h4>${u.name}</h4>
+        <p>${u.email}</p>
+        <p>Balance: KSH ${u.balance}</p>
+
+      </div>
+
+    `;
+
+  });
+
+}
+
+/* INIT */
+loadStats();
+loadSubmissions();
+loadUsers();
+
+</script>
+
+</body>
+</html>
