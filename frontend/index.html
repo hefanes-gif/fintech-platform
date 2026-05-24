@@ -1,131 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Fintech App</title>
-<style>
-body{font-family:Arial;background:#0f172a;color:white;margin:0}
-.sidebar{width:220px;position:fixed;height:100%;background:#111827;padding:20px}
-.main{margin-left:240px;padding:20px}
-.card{background:#1e293b;padding:15px;margin:10px;border-radius:10px}
-input,button{width:100%;padding:10px;margin:5px 0}
-button{background:#22c55e;border:none;color:white}
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fintech Dashboard</title>
+<link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<div class="sidebar">
-<h3>FINTECH</h3>
-<button onclick="show('dash')">Dashboard</button>
-<button onclick="show('deposit')">Deposit</button>
-<button onclick="show('withdraw')">Withdraw</button>
-<button onclick="show('history')">History</button>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>💰 Fintech</h2>
+
+    <nav>
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Wallet</a>
+      <a href="#">Transactions</a>
+      <a href="#">Settings</a>
+    </nav>
+
+    <button onclick="logout()">Logout</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <h1>Dashboard</h1>
+      <div class="user" id="userBox">Loading...</div>
+    </header>
+
+    <!-- WALLET CARDS -->
+    <section class="cards">
+
+      <div class="card">
+        <h3>Balance</h3>
+        <p id="balance">KSh 0.00</p>
+      </div>
+
+      <div class="card">
+        <h3>Total Deposits</h3>
+        <p id="deposits">KSh 0.00</p>
+      </div>
+
+      <div class="card">
+        <h3>Total Withdrawals</h3>
+        <p id="withdrawals">KSh 0.00</p>
+      </div>
+
+    </section>
+
+    <!-- ACTION BUTTONS -->
+    <section class="actions">
+      <button onclick="openDeposit()">+ Deposit</button>
+      <button onclick="openWithdraw()">- Withdraw</button>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="table">
+      <h2>Transactions</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="txTable"></tbody>
+      </table>
+    </section>
+
+  </main>
 </div>
 
-<div class="main">
-
-<div id="dash">
-  <div class="card">
-    <h2>Balance: <span id="bal">0</span></h2>
+<!-- DEPOSIT MODAL -->
+<div id="depositModal" class="modal">
+  <div class="modal-content">
+    <h3>Deposit Money</h3>
+    <input id="depAmount" type="number" placeholder="Amount"/>
+    <button onclick="deposit()">Confirm</button>
+    <button onclick="closeDeposit()">Close</button>
   </div>
 </div>
 
-<div id="deposit" style="display:none">
-  <div class="card">
-    <input id="dphone" placeholder="Phone">
-    <input id="damount" placeholder="Amount">
-    <button onclick="deposit()">Deposit</button>
+<!-- WITHDRAW MODAL -->
+<div id="withdrawModal" class="modal">
+  <div class="modal-content">
+    <h3>Withdraw Money</h3>
+    <input id="withAmount" type="number" placeholder="Amount"/>
+    <button onclick="withdraw()">Request</button>
+    <button onclick="closeWithdraw()">Close</button>
   </div>
 </div>
 
-<div id="withdraw" style="display:none">
-  <div class="card">
-    <input id="wphone" placeholder="Phone">
-    <input id="wamount" placeholder="Amount">
-    <button onclick="withdraw()">Withdraw</button>
-  </div>
-</div>
-
-<div id="history" style="display:none">
-  <div class="card">
-    <div id="tx"></div>
-  </div>
-</div>
-
-</div>
-
-<script>
-let token = localStorage.getItem("token");
-
-function auth(){
-  return { "Authorization":"Bearer "+token, "Content-Type":"application/json" };
-}
-
-function show(id){
-  document.querySelectorAll('.main > div').forEach(d=>d.style.display='none');
-  document.getElementById(id).style.display='block';
-}
-
-async function deposit(){
-  await fetch("/api/mpesa/stkpush",{
-    method:"POST",
-    headers:auth(),
-    body:JSON.stringify({
-      phone:dphone.value,
-      amount:damount.value
-    })
-  });
-  alert("STK sent");
-}
-
-async function withdraw(){
-  await fetch("/api/wallet/withdraw",{
-    method:"POST",
-    headers:auth(),
-    body:JSON.stringify({
-      phone:wphone.value,
-      amount:wamount.value
-    })
-  });
-  alert("Requested");
-}
-
-async function load(){
-  const b = await fetch("/api/wallet",{headers:auth()}).then(r=>r.json());
-  bal.innerText=b.balance;
-
-  const t = await fetch("/api/transactions",{headers:auth()}).then(r=>r.json());
-  tx.innerHTML = t.map(x=>`<div>${x.amount} - ${x.type}</div>`).join("");
-}
-async function loadTransactions() {
-  const res = await fetch(API + "/api/transactions", {
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("token")
-    }
-  });
-
-  const data = await res.json();
-
-  const table = document.getElementById("txTable");
-  table.innerHTML = "";
-
-  if (!data.length) {
-    table.innerHTML = "<tr><td colspan='4'>No transactions yet</td></tr>";
-    return;
-  }
-
-  data.forEach(tx => {
-    table.innerHTML += `
-      <tr>
-        <td>${tx.type}</td>
-        <td>KES ${tx.amount}</td>
-        <td>${tx.status}</td>
-        <td>${new Date(tx.created_at).toLocaleString()}</td>
-      </tr>
-    `;
-  });
-}
-load();
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
