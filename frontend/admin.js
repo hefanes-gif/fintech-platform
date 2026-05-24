@@ -1,20 +1,34 @@
-async function loadUsers(){
-  const res = await fetch("/api/admin/users");
+async function loadWithdrawals() {
+  const res = await fetch(API + "/api/admin/withdrawals");
   const data = await res.json();
 
-  users.innerHTML = data.map(u =>
-    `<div>${u.name} - ${u.balance}</div>`
-  ).join("");
+  const box = document.getElementById("withdrawals");
+  box.innerHTML = "";
+
+  data.forEach(w => {
+    box.innerHTML += `
+      <div style="background:#111;padding:10px;margin:10px;border-radius:8px">
+        <p>Phone: ${w.phone}</p>
+        <p>Amount: KES ${w.amount}</p>
+        <p>Status: ${w.status}</p>
+
+        ${w.status === "pending" ? `
+          <button onclick="approve('${w.id}')">Approve</button>
+        ` : ""}
+      </div>
+    `;
+  });
 }
 
-async function loadWithdrawals(){
-  const res = await fetch("/api/admin/withdrawals");
-  const data = await res.json();
+async function approve(id) {
+  await fetch(API + "/api/admin/withdraw/approve", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ id })
+  });
 
-  wd.innerHTML = data.map(w =>
-    `<div>${w.phone} - ${w.amount} - ${w.status}</div>`
-  ).join("");
+  alert("Approved");
+  loadWithdrawals();
 }
 
-loadUsers();
 loadWithdrawals();

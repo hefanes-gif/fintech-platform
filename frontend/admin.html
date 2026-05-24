@@ -1,31 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin</title>
+<title>Admin Panel</title>
 <style>
-body{background:#0b1220;color:white;font-family:Arial}
-.main{padding:20px}
-.card{background:#1e293b;padding:15px;margin:10px}
+body{font-family:Arial;background:#0b1220;color:white}
+.card{background:#1a2236;margin:10px;padding:10px;border-radius:8px}
+button{padding:8px;background:green;color:white;border:none}
 </style>
 </head>
+
 <body>
 
-<div class="main">
-<h2>ADMIN PANEL</h2>
+<h2>Admin Withdrawals</h2>
+<div id="list"></div>
 
-<div class="card">
-<h3>Users</h3>
-<div id="users"></div>
-</div>
+<script>
+const API = "https://fintech-platform-1-uc8n.onrender.com";
 
-<div class="card">
-<h3>Withdrawals</h3>
-<div id="wd"></div>
-</div>
+async function load(){
+  const res = await fetch(API+"/api/admin/withdrawals");
+  const data = await res.json();
 
-</div>
+  let html = "";
 
-<script src="admin.js"></script>
+  data.forEach(w=>{
+    html += `
+    <div class="card">
+      <p>${w.phone}</p>
+      <p>${w.amount}</p>
+      <p>${w.status}</p>
+      ${w.status==="pending" ? `<button onclick="approve('${w.id}')">Approve</button>`:""}
+    </div>`;
+  });
+
+  document.getElementById("list").innerHTML = html;
+}
+
+async function approve(id){
+  await fetch(API+"/api/admin/withdraw/approve",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id})
+  });
+
+  load();
+}
+
+load();
+</script>
 
 </body>
 </html>

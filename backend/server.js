@@ -9,7 +9,7 @@ const { createClient } = require("@supabase/supabase-js");
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(express.static("public"));
 
@@ -18,6 +18,15 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
+
+// ================= HEALTH =================
+app.get("/", (req, res) => {
+  res.send("FINTECH API RUNNING 🚀");
+});
+
+app.get("/api", (req, res) => {
+  res.json({ status: "FINTECH LIVE 🚀" });
+});
 
 // ================= AUTH MIDDLEWARE =================
 function auth(req, res, next) {
@@ -32,11 +41,6 @@ function auth(req, res, next) {
     res.status(401).json({ error: "Invalid token" });
   }
 }
-
-// ================= HOME =================
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
-});
 
 // ================= REGISTER =================
 app.post("/api/auth/register", async (req, res) => {
@@ -73,7 +77,7 @@ app.post("/api/auth/login", async (req, res) => {
   if (!user) return res.status(400).json({ error: "User not found" });
 
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: "Wrong password" });
+  if (!valid) return res.status(400).json({ error: "Wrong password" });
 
   const token = jwt.sign(
     { id: user.id, role: user.role },
@@ -106,58 +110,8 @@ app.get("/api/transactions", auth, async (req, res) => {
   res.json(data);
 });
 
-// ================= MPESA TOKEN =================
-async function getToken() {
-  const auth = Buffer.from(
-    `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
-  ).toString("base64");
-
-  const res = await axios.get(
-    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-    { headers: { Authorization: `Basic ${auth}` } }
-  );
-
-  return res.data.access_token;
-}
-
-// ================= STK PUSH (DEPOSIT) =================
-app.post("/api/mpesa/stkpush", auth, async (req, res) => {
-  const { phone, amount } = req.body;
-
-  const token = await getToken();
-
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[^0-9]/g, "")
-    .slice(0, 14);
-
-  const password = Buffer.from(
-    `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
-  ).toString("base64");
-
-  const response = await axios.post(
-    "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-    {
-      BusinessShortCode: process.env.MPESA_SHORTCODE,
-      Password: password,
-      Timestamp: timestamp,
-      TransactionType: "CustomerPayBillOnline",
-      Amount: amount,
-      PartyA: phone,
-      PartyB: process.env.MPESA_SHORTCODE,
-      PhoneNumber: phone,
-      CallBackURL: process.env.MPESA_CALLBACK_URL,
-      AccountReference: "FINTECH",
-      TransactionDesc: "Deposit"
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
-  res.json(response.data);
-});
-
-// ================= WITHDRAW REQUEST (SAFE LAYER) =================
-app.post("/api/wallet/withdraw", auth, async (req, res) => {
+// ================= WITHDRAW REQUEST =================
+app.post("/api/withdraw", auth, async (req, res) => {
   const { phone, amount } = req.body;
 
   const { data: user } = await supabase
@@ -170,73 +124,68 @@ app.post("/api/wallet/withdraw", auth, async (req, res) => {
     return res.status(400).json({ error: "Insufficient balance" });
   }
 
-  const newBalance = Number(user.balance) - Number(amount);
-
-  await supabase
-    .from("users")
-    .update({ balance: newBalance })
-    .eq("id", user.id);
-
-  await supabase.from("withdrawals").insert([
+  const { data, error } = await supabase.from("withdrawals").insert([
     {
-      user_id: user.id,
+      user_id: req.user.id,
       phone,
       amount,
       status: "pending"
     }
   ]);
 
-  res.json({
-    success: true,
-    message: "Withdrawal queued for B2C payout",
-    newBalance
-  });
+  if (error) return res.status(400).json(error);
+
+  res.json({ success: true, data });
 });
 
-// ================= MPESA B2C WITHDRAWAL =================
-app.post("/api/mpesa/b2c", async (req, res) => {
-  const { phone, amount } = req.body;
-
-  const token = await getToken();
-
-  const response = await axios.post(
-    "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
-    {
-      InitiatorName: process.env.MPESA_INITIATOR,
-      SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL,
-      CommandID: "BusinessPayment",
-      Amount: amount,
-      PartyA: process.env.MPESA_SHORTCODE,
-      PartyB: phone,
-      Remarks: "Withdrawal",
-      QueueTimeOutURL: process.env.MPESA_B2C_TIMEOUT_URL,
-      ResultURL: process.env.MPESA_B2C_RESULT_URL,
-      Occasion: "Wallet Withdrawal"
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
-  res.json(response.data);
-});
-
-// ================= CALLBACK =================
-app.post("/api/mpesa/callback", async (req, res) => {
-  console.log("CALLBACK:", JSON.stringify(req.body));
-
-  res.json({ ResultCode: 0, ResultDesc: "Accepted" });
-});
-
-// ================= ADMIN =================
-app.get("/api/admin/users", async (req, res) => {
-  const { data } = await supabase.from("users").select("*");
-  res.json(data);
-});
-
+// ================= ADMIN WITHDRAWALS =================
 app.get("/api/admin/withdrawals", async (req, res) => {
-  const { data } = await supabase.from("withdrawals").select("*");
+  const { data } = await supabase
+    .from("withdrawals")
+    .select("*")
+    .order("created_at", { ascending: false });
+
   res.json(data);
+});
+
+// ================= ADMIN APPROVE WITHDRAWAL =================
+app.post("/api/admin/withdraw/approve", async (req, res) => {
+  const { id } = req.body;
+
+  const { data: withdrawal } = await supabase
+    .from("withdrawals")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (!withdrawal) return res.status(404).json({ error: "Not found" });
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", withdrawal.user_id)
+    .single();
+
+  const newBalance = Number(user.balance) - Number(withdrawal.amount);
+
+  await supabase
+    .from("users")
+    .update({ balance: newBalance })
+    .eq("id", user.id);
+
+  await supabase
+    .from("withdrawals")
+    .update({ status: "approved" })
+    .eq("id", id);
+
+  res.json({ success: true });
 });
 
 // ================= START =================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("FINTECH LEVEL 3 LIVE 🚀", PORT));
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("FINTECH LIVE 🚀 ON PORT", PORT);
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found", path: req.path });
+});

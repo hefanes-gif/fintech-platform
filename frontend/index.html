@@ -96,7 +96,34 @@ async function load(){
   const t = await fetch("/api/transactions",{headers:auth()}).then(r=>r.json());
   tx.innerHTML = t.map(x=>`<div>${x.amount} - ${x.type}</div>`).join("");
 }
+async function loadTransactions() {
+  const res = await fetch(API + "/api/transactions", {
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  });
 
+  const data = await res.json();
+
+  const table = document.getElementById("txTable");
+  table.innerHTML = "";
+
+  if (!data.length) {
+    table.innerHTML = "<tr><td colspan='4'>No transactions yet</td></tr>";
+    return;
+  }
+
+  data.forEach(tx => {
+    table.innerHTML += `
+      <tr>
+        <td>${tx.type}</td>
+        <td>KES ${tx.amount}</td>
+        <td>${tx.status}</td>
+        <td>${new Date(tx.created_at).toLocaleString()}</td>
+      </tr>
+    `;
+  });
+}
 load();
 </script>
 
