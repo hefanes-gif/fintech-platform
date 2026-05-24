@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+<style>
+body{font-family:Arial;background:#0b1220;color:white}
+.card{background:#1a2236;margin:10px;padding:10px;border-radius:8px}
+button{padding:8px;background:green;color:white;border:none}
+</style>
+</head>
+
+<body>
+
+<h2>Admin Withdrawals</h2>
+<div id="list"></div>
+
+<script>
+const API = "https://fintech-platform-1-uc8n.onrender.com";
+
+async function load(){
+  const res = await fetch(API+"/api/admin/withdrawals");
+  const data = await res.json();
+
+  let html = "";
+
+  data.forEach(w=>{
+    html += `
+    <div class="card">
+      <p>${w.phone}</p>
+      <p>${w.amount}</p>
+      <p>${w.status}</p>
+      ${w.status==="pending" ? `<button onclick="approve('${w.id}')">Approve</button>`:""}
+    </div>`;
+  });
+
+  document.getElementById("list").innerHTML = html;
+}
+
+async function approve(id){
+  await fetch(API+"/api/admin/withdraw/approve",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({id})
+  });
+
+  load();
+}
+
+load();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fintech Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>💰 Fintech</h2>
+
+    <nav>
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Wallet</a>
+      <a href="#">Transactions</a>
+      <a href="#">Settings</a>
+    </nav>
+
+    <button onclick="logout()">Logout</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <h1>Dashboard</h1>
+      <div class="user" id="userBox">Loading...</div>
+    </header>
+
+    <!-- WALLET CARDS -->
+    <section class="cards">
+
+      <div class="card">
+        <h3>Balance</h3>
+        <p id="balance">KSh 0.00</p>
+      </div>
+
+      <div class="card">
+        <h3>Total Deposits</h3>
+        <p id="deposits">KSh 0.00</p>
+      </div>
+
+      <div class="card">
+        <h3>Total Withdrawals</h3>
+        <p id="withdrawals">KSh 0.00</p>
+      </div>
+
+    </section>
+
+    <!-- ACTION BUTTONS -->
+    <section class="actions">
+      <button onclick="openDeposit()">+ Deposit</button>
+      <button onclick="openWithdraw()">- Withdraw</button>
+    </section>
+
+    <!-- TRANSACTIONS -->
+    <section class="table">
+      <h2>Transactions</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="txTable"></tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<!-- DEPOSIT MODAL -->
+<div id="depositModal" class="modal">
+  <div class="modal-content">
+    <h3>Deposit Money</h3>
+    <input id="depAmount" type="number" placeholder="Amount"/>
+    <button onclick="deposit()">Confirm</button>
+    <button onclick="closeDeposit()">Close</button>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div id="withdrawModal" class="modal">
+  <div class="modal-content">
+    <h3>Withdraw Money</h3>
+    <input id="withAmount" type="number" placeholder="Amount"/>
+    <button onclick="withdraw()">Request</button>
+    <button onclick="closeWithdraw()">Close</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
